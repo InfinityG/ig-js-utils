@@ -1,12 +1,12 @@
 # ig-js-utils
 
-## Encryption & signing
+## Encryption and signing
 
 The core encryption and signing capabilities are provided by the CryptoCoinJS library. As CryptoCoinJS has been designed 
  to run on NodeJS, the required components have been compiled into __/lib/ecdsa_bundle.js__, using [Browserify](http://browserify.org/).
  
  
- ### Browserify compilation 
+### Browserify compilation 
  
  The script used to compile the required CryptoCoinJS libraries is as follows:
   
@@ -32,6 +32,6 @@ The core encryption and signing capabilities are provided by the CryptoCoinJS li
   
  This outputs a js file called 'ecdsa_bundle.js'
    
- ### Utility functions
+### Utility functions
  
  The main utility functions are contained in __crypto/cryptoUtil.js__. 
