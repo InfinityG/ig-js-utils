@@ -8,6 +8,9 @@ The core encryption and signing capabilities are provided by the CryptoCoinJS li
  
 ### Browserify compilation 
  
+ *The __/lib/ecdsa_bundle.js__ file has been compiled using Browserify. There is no need to do this, as it has been included
+  here, so this is purely informational*.
+  
  The script used to compile the required CryptoCoinJS libraries is as follows:
   
   node_main.js:
