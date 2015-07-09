@@ -1,0 +1,20 @@
+{
+  "name": "ig-js-crypto-utils",
+  "version": "0.0.1",
+  "description": "General utility library",
+  "main": "cryptoUtil.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/InfinityG/ig-js-utils.git"
+  },
+  "keywords": [],
+  "author": " <developer@infinity-g.com>",
+  "license": "MIT",
+  "homepage": "http://infinity-g.com",
+  "bugs": {
+    "url": ""
+  }
+}
