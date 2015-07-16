@@ -7,10 +7,8 @@ window.cryptoUtil = (function () {
 
         AES: {
             generateAESKey: function (password, salt) {
-                // use pbkdf2 to convert variable password length to 256 bit hash,
-                // split into 8 bytes of 32 bits each
                 var pbkdf2 = require('pbkdf2-sha256');
-                var buffer = pbkdf2(password, salt, 1, 8);
+                var buffer = pbkdf2(password, salt, 1, 64);
                 var hash = buffer.toString();
                 return cryptoUtil.textToIntArray(hash);
             },
