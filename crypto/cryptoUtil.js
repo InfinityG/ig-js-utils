@@ -8,7 +8,7 @@ window.cryptoUtil = (function () {
         AES: {
             generateAESKey: function (password, salt) {
                 var pbkdf2 = require('pbkdf2-sha256');
-                var buffer = pbkdf2(password, salt, 1, 64);
+                var buffer = pbkdf2(password, salt, 1, 32);
                 var hash = buffer.toString();
                 return cryptoUtil.textToIntArray(hash);
             },
