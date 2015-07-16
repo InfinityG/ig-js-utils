@@ -8,9 +8,17 @@ window.cryptoUtil = (function () {
         AES: {
             generateAESKey: function (password, salt) {
                 var pbkdf2 = require('pbkdf2-sha256');
-                var buffer = pbkdf2(password, salt, 1, 8);
-                var hash = buffer.toString();
-                return cryptoUtil.textToIntArray(hash);
+                var BigInteger = require('bigi');
+
+                // generate byte array with length 64
+                var buffer = pbkdf2(password, salt, 1, 64);
+                
+                // split the byte array into 4 chunks of 16 bytes - create a bigint from each 16 byte chunk
+                var quadArr = [];
+                for(var x=0; x< buffer.length; x+=16){
+                    quadArr.push(BigInteger.fromBuffer(buffer.slice(x, x+16)));
+                }
+                return quadArr;
             },
 
             encryptStringToBase64: function (cryptoKey, plainText) {
