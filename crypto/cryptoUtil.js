@@ -12,7 +12,7 @@ window.cryptoUtil = (function () {
 
                 // generate byte array with length 64
                 var buffer = pbkdf2(password, salt, 1, 64);
-                
+
                 // split the byte array into 4 chunks of 16 bytes - create a bigint from each 16 byte chunk
                 var quadArr = [];
                 for(var x=0; x< buffer.length; x+=16){
