@@ -13,93 +13,143 @@ window.cryptoUtil = (function () {
                 // generate byte array with length 64
                 var buffer = pbkdf2(password, salt, 1, 64);
 
-                // split the byte array into 4 chunks of 16 bytes - create a bigint from each 16 byte chunk
+                // split the byte array into 8 chunks of 8 bytes - create a bigint from each 8 byte chunk
                 var quadArr = [];
-                for(var x=0; x< buffer.length; x+=16){
-                    quadArr.push(BigInteger.fromBuffer(buffer.slice(x, x+16)));
+                for(var x=0; x< buffer.length; x+=8){
+                    var chunk = BigInteger.fromBuffer(buffer.slice(x, x+8));
+                    quadArr.push(chunk);
                 }
                 return quadArr;
             },
 
-            encryptStringToBase64: function (cryptoKey, plainText) {
-                var buf = require('buffer');
-                var buffer = new buf.Buffer(plainText);
-
-                var encryptedString = cryptoUtil.AES.encryptBufferToString(cryptoKey, buffer);
-                return cryptoUtil.AES.base64Encode(encryptedString);
-            },
-
             encryptBufferToBase64: function (cryptoKey, buffer) {
-                var encryptedString = cryptoUtil.AES.encryptBufferToString(cryptoKey, buffer);
-                return cryptoUtil.AES.base64Encode(encryptedString);
+                var encryptedBuffer = cryptoUtil.AES.encryptBuffer(cryptoKey, buffer);
+                var base64 = encryptedBuffer.toString('base64');
+                console.debug('Encoded & encrypted: ' + base64);
+                return base64;
             },
 
-            encryptBufferToString: function (cryptoKey, buffer) {
+            // output is an encrypted buffer
+            encryptBuffer: function(cryptoKey, buffer){
+                //order: buffer > unencrypted uint array > encrypted uint array > buffer
                 try {
                     var aes = cryptoUtil.AES.getAESInstance(cryptoKey);
-                    var cipherText = '';
+                    //convert buffer to int array
+                    var decIntArr = cryptoUtil.AES.compressBufferToIntArray(buffer);
+                    //result is an int array
+                    var encIntArr = [];
 
                     //iterate through buffer and encrypt every block of 4
                     var pos = 0;
-                    while (pos < buffer.length) {
-                        var block = buffer.slice(pos, pos + 4);
+                    while (pos < decIntArr.length) {
+                        var block = decIntArr.slice(pos, pos + 4);
                         cryptoUtil.AES.pad(block); //pad the last block if necessary
-                        var encBlock = aes.encrypt(block);
-                        for (var x = 0; x < encBlock.length; x++) {
-                            cipherText += encBlock[x] + ',';
+                        var encBlock = aes.encrypt(block);  //output is also an int array length 4
+
+                        for(var i=0; i<encBlock.length; i++){
+                            encIntArr.push(encBlock[i]);
                         }
+
                         pos += 4;
                     }
+
+                    console.debug('Encrypted uint arr: ' + encIntArr.length);
+
+                    //result is a uint array - we need to get this back to a buffer
+                    return cryptoUtil.AES.decompressIntArrayToBuffer(encIntArr);
                 } catch (e) {
                     console.debug('Encryption error: ' + e.message);
                     throw e;
                 }
-
-                return cipherText.substring(0, cipherText.length - 1); //remove the last comma
             },
 
-            decryptBase64ToString: function (cryptoKey, cipherText) {
-                var decryptedBuffer = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, cipherText);
-                return decryptedBuffer.toString('utf-8')
+            compressBufferToIntArray: function(buffer){
+                //eg: compress 32 byte buffer into uint array length 8
+
+                console.debug('Buffer length (pre-compression): ' + buffer.length);
+
+                var BigInteger = require('bigi');
+                var result = [];
+                var pos = 0;
+
+                while (pos < buffer.length) {
+                    var block = buffer.slice(pos, pos + 4);
+                    cryptoUtil.AES.pad(block);
+
+                    //convert each block of 4 into a bigint
+                    var int = BigInteger.fromBuffer(block);
+
+                    result.push(int);
+                    pos += 4;
+                }
+
+                console.debug('Uint array (post compression): ' + result.length);
+                return result;
+            },
+
+            decompressIntArrayToBuffer: function(arr){
+                //eg: decompress uint array length 8 to buffer length 32
+                var BigInteger = require('bigi');
+                var buf = require('buffer');
+
+                var result = [];
+
+                for(var x=0; x<arr.length; x++){
+                    var bufChunk = (new BigInteger(arr[x].toString())).toBuffer(4); //cast uint to buffer length 4
+
+                    for(var i=0; i<bufChunk.length ; i++){
+                        result.push(bufChunk[i]);
+                    }
+                }
+
+                return new buf.Buffer(result);
             },
 
             decryptBase64ToBuffer: function (cryptoKey, cipherText) {
-                var decodedText = cryptoUtil.AES.base64Decode(cipherText);
-                return cryptoUtil.AES.decryptStringToBuffer(cryptoKey, decodedText);
+                var buf = require('buffer');
+                var buffer = new buf.Buffer(cipherText, 'base64');
+                return cryptoUtil.AES.decryptBuffer(cryptoKey, buffer);
             },
 
-            decryptStringToBuffer: function (cryptoKey, decodedText) {
+            // output is an encrypted buffer
+            decryptBuffer: function(cryptoKey, buffer){
+                //order: buffer > encrypted uint array > decrypted uint array > buffer
+                console.debug('Decrypting buffer: key: ' + cryptoKey + ', buffer: ' + buffer.toString());
                 try {
                     var aes = cryptoUtil.AES.getAESInstance(cryptoKey);
-                    var arr = decodedText.split(',');
+                    var encIntArr = cryptoUtil.AES.compressBufferToIntArray(buffer);
+                    var decIntArr = [];
 
-                    var result = [];
-
-                    //iterate through array and decrypt every block of 4
+                    //iterate through buffer and decrypt every block of 4
                     var pos = 0;
-                    while (pos < arr.length) {
-                        var block = arr.slice(pos, pos + 4);
-                        var decArr = aes.decrypt(block);
+                    while (pos < encIntArr.length) {
+                        var block = encIntArr.slice(pos, pos + 4);
+                        var decBlock = aes.decrypt(block);  //result is also a unit array length 4
 
-                        for (var x = 0; x < decArr.length; x++) {
-                            result.push(decArr[x]);
+                        for(var i=0; i<decBlock.length; i++){
+                            decIntArr.push(decBlock[i]);
                         }
 
                         pos += 4;
                     }
+
+                    //result is a uint array - we need to get this back to a buffer
+                    var result = cryptoUtil.AES.decompressIntArrayToBuffer(decIntArr);
+                    console.debug('Decrypted buffer: ' + result.toString());
+                    return result;
+
                 } catch (e) {
                     console.debug('Decryption error: ' + e.message);
                     throw e;
                 }
-
-                var buf = require('buffer');
-                return new buf.Buffer(result);
             },
 
             validateAESKey: function (cryptoKey, cipherTextOriginal) {
                 var decrypted = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, cipherTextOriginal);
                 var encrypted = cryptoUtil.AES.encryptBufferToBase64(cryptoKey, decrypted);
 
+                console.debug('Original cipher: ' + cipherTextOriginal);
+                console.debug('Recreated cipher: ' + encrypted);
                 var result = (encrypted == cipherTextOriginal);
 
                 //event for modals
