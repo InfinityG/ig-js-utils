@@ -22,11 +22,15 @@ window.cryptoUtil = (function () {
                 return quadArr;
             },
 
+            encryptTextToBase64: function(cryptoKey, data){
+                var buf = require('buffer');
+                var buffer = new buf.Buffer(data);
+                return cryptoUtil.AES.encryptBufferToBase64(cryptoKey, buffer);
+            },
+
             encryptBufferToBase64: function (cryptoKey, buffer) {
                 var encryptedBuffer = cryptoUtil.AES.encryptBuffer(cryptoKey, buffer);
-                var base64 = encryptedBuffer.toString('base64');
-                console.debug('Encoded & encrypted: ' + base64);
-                return base64;
+                return encryptedBuffer.toString('base64');
             },
 
             // output is an encrypted buffer
@@ -43,7 +47,7 @@ window.cryptoUtil = (function () {
                     var pos = 0;
                     while (pos < decIntArr.length) {
                         var block = decIntArr.slice(pos, pos + 4);
-                        cryptoUtil.AES.pad(block); //pad the last block if necessary
+                        cryptoUtil.AES.pad(block);  //pad the last block if necessary
                         var encBlock = aes.encrypt(block);  //output is also an int array length 4
 
                         for(var i=0; i<encBlock.length; i++){
@@ -52,8 +56,6 @@ window.cryptoUtil = (function () {
 
                         pos += 4;
                     }
-
-                    console.debug('Encrypted uint arr: ' + encIntArr.length);
 
                     //result is a uint array - we need to get this back to a buffer
                     return cryptoUtil.AES.decompressIntArrayToBuffer(encIntArr);
@@ -65,8 +67,6 @@ window.cryptoUtil = (function () {
 
             compressBufferToIntArray: function(buffer){
                 //eg: compress 32 byte buffer into uint array length 8
-
-                console.debug('Buffer length (pre-compression): ' + buffer.length);
 
                 var BigInteger = require('bigi');
                 var result = [];
@@ -83,7 +83,6 @@ window.cryptoUtil = (function () {
                     pos += 4;
                 }
 
-                console.debug('Uint array (post compression): ' + result.length);
                 return result;
             },
 
@@ -105,16 +104,21 @@ window.cryptoUtil = (function () {
                 return new buf.Buffer(result);
             },
 
+            decryptBase64ToText: function (cryptoKey, cipherText) {
+                var result = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, cipherText);
+                return result.toString('utf8');
+            },
+
             decryptBase64ToBuffer: function (cryptoKey, cipherText) {
                 var buf = require('buffer');
                 var buffer = new buf.Buffer(cipherText, 'base64');
                 return cryptoUtil.AES.decryptBuffer(cryptoKey, buffer);
             },
 
-            // output is an encrypted buffer
+            // output is an decrypted buffer
             decryptBuffer: function(cryptoKey, buffer){
                 //order: buffer > encrypted uint array > decrypted uint array > buffer
-                console.debug('Decrypting buffer: key: ' + cryptoKey + ', buffer: ' + buffer.toString());
+
                 try {
                     var aes = cryptoUtil.AES.getAESInstance(cryptoKey);
                     var encIntArr = cryptoUtil.AES.compressBufferToIntArray(buffer);
@@ -133,10 +137,8 @@ window.cryptoUtil = (function () {
                         pos += 4;
                     }
 
-                    //result is a uint array - we need to get this back to a buffer
-                    var result = cryptoUtil.AES.decompressIntArrayToBuffer(decIntArr);
-                    console.debug('Decrypted buffer: ' + result.toString());
-                    return result;
+                    //decIntArr is a uint array - we need to get this back to a buffer
+                    return cryptoUtil.AES.decompressIntArrayToBuffer(decIntArr);
 
                 } catch (e) {
                     console.debug('Decryption error: ' + e.message);
@@ -144,20 +146,9 @@ window.cryptoUtil = (function () {
                 }
             },
 
-            validateAESKey: function (cryptoKey, cipherTextOriginal) {
-                var decrypted = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, cipherTextOriginal);
-                var encrypted = cryptoUtil.AES.encryptBufferToBase64(cryptoKey, decrypted);
-
-                console.debug('Original cipher: ' + cipherTextOriginal);
-                console.debug('Recreated cipher: ' + encrypted);
-                var result = (encrypted == cipherTextOriginal);
-
-                //event for modals
-                if (!result) {
-                    throw new Error('AES key validation error');
-                }
-
-                return result;
+            validateAESKey: function (cryptoKey, unencryptedTextToCompare, base64CipherTextOriginal) {
+                var encrypted = cryptoUtil.AES.encryptTextToBase64(cryptoKey, unencryptedTextToCompare);
+                return (encrypted == base64CipherTextOriginal);
             },
 
             getAESInstance: function (key) {
