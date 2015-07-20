@@ -21,4 +21,11 @@ The core encryption and signing capabilities are provided by the CryptoCoinJS li
    
 ### Utility functions
  
- The main utility functions are contained in __crypto/cryptoUtil.js__. 
+ The main utility functions are contained in __crypto/cryptoUtil.js__.
+  
+### How to use this library
+
+Take a look at the specifications in the __/tests/spec__ directory. These tests clearly demonstrate the use of AES and ECDSA
+functionality. 
+
+To run the tests, simply open __SpecRunner.html__ in your browser and they will automatically run. 
