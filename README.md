@@ -12,10 +12,11 @@ The core encryption and signing capabilities are provided by the CryptoCoinJS li
  you shouldn't need to do this, so this is purely informational*.
   
   - Run ```npm install``` in the root to install dependencies
-  - Then run: 
-  ```
-  browserify -r ecdsa -r crypto -r bigi -r secure-random -r aes -r coinkey -r buffer -r binstring -r pbkdf2-sha256 input.js > src/lib/cryptoBundle.js
-  ```
+  - Then run:
+  
+   ```
+   browserify -r ecdsa -r crypto -r bigi -r secure-random -r aes -r coinkey -r buffer -r binstring -r pbkdf2-sha256 input.js > src/lib/cryptoBundle.js
+   ```
   - This will use ```input.js``` as the input file, and will generate an output file called ```cryptoBundle.js```
    
 ### Utility functions
