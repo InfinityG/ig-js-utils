@@ -1,7 +1,5 @@
 window.cryptoUtil = (function () {
-    function CryptoUtil() {
-
-    }
+    function CryptoUtil() {}
 
     var cryptoUtil = {
 
@@ -86,15 +84,15 @@ window.cryptoUtil = (function () {
                 return result;
             },
 
-            decompressIntArrayToBuffer: function(arr){
+            decompressIntArrayToBuffer: function(intArr){
                 //eg: decompress uint array length 8 to buffer length 32
                 var BigInteger = require('bigi');
                 var buf = require('buffer');
 
                 var result = [];
 
-                for(var x=0; x<arr.length; x++){
-                    var bufChunk = (new BigInteger(arr[x].toString())).toBuffer(4); //cast uint to buffer length 4
+                for(var x=0; x<intArr.length; x++){
+                    var bufChunk = (new BigInteger(intArr[x].toString())).toBuffer(4); //cast uint to buffer length 4
 
                     for(var i=0; i<bufChunk.length ; i++){
                         result.push(bufChunk[i]);
@@ -104,14 +102,14 @@ window.cryptoUtil = (function () {
                 return new buf.Buffer(result);
             },
 
-            decryptBase64ToText: function (cryptoKey, cipherText) {
-                var result = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, cipherText);
+            decryptBase64ToText: function (cryptoKey, base64CipherText) {
+                var result = cryptoUtil.AES.decryptBase64ToBuffer(cryptoKey, base64CipherText);
                 return result.toString('utf8');
             },
 
-            decryptBase64ToBuffer: function (cryptoKey, cipherText) {
+            decryptBase64ToBuffer: function (cryptoKey, base64CipherText) {
                 var buf = require('buffer');
-                var buffer = new buf.Buffer(cipherText, 'base64');
+                var buffer = new buf.Buffer(base64CipherText, 'base64');
                 return cryptoUtil.AES.decryptBuffer(cryptoKey, buffer);
             },
 
@@ -186,22 +184,30 @@ window.cryptoUtil = (function () {
                 return {pk: ck.publicKey, sk: ck.privateKey};
             },
 
-            createMessageDigest: function (message) {
+            createMessageDigest: function (messageText) {
                 var crypto = require('crypto');
                 var buf = require('buffer');
 
-                var msg = new buf.Buffer(message, 'utf8');
+                var msg = new buf.Buffer(messageText, 'utf8');
                 return crypto.createHash('sha256').update(msg).digest();
             },
 
-            signMessage: function (messageDigest, privateKeyBuffer) {
+            signMessage: function (messageDigestBuffer, privateKeyBuffer) {
                 var ecdsa = require('ecdsa');
                 var buf = require('buffer');
 
-                var signature = ecdsa.sign(messageDigest, privateKeyBuffer);
+                var signature = ecdsa.sign(messageDigestBuffer, privateKeyBuffer);
                 var serialisedSig = ecdsa.serializeSig(signature);
 
                 return buf.Buffer(serialisedSig);
+            },
+
+            validateSignature: function(messageDigestBuffer, signatureBuffer, base64PublicKey){
+                var ecdsa = require('ecdsa');
+                var buf = require('buffer');
+                var keyBuffer = new buf.Buffer(base64PublicKey, 'base64');
+                var parsedSigBuffer = ecdsa.parseSig(signatureBuffer);
+                return ecdsa.verify(messageDigestBuffer, parsedSigBuffer, keyBuffer)
             }
         },
 
